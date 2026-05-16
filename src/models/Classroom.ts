@@ -14,6 +14,8 @@ export abstract class Classroom {
 
   abstract getType(): string;
 
+  abstract requiresApproval(): boolean;
+
   getId(): string {
     return this.id;
   }
@@ -54,6 +56,9 @@ export class StudyClassroom extends Classroom {
   getType(): string {
     return "Estudo Individual";
   }
+  requiresApproval(): boolean {
+    return false;
+  }
 }
 
 export class ExamClassroom extends Classroom {
@@ -62,6 +67,9 @@ export class ExamClassroom extends Classroom {
   }
   getType(): string {
     return "Prova";
+  }
+  requiresApproval(): boolean {
+    return true;
   }
 }
 
@@ -72,6 +80,9 @@ export class GroupStudyClassroom extends Classroom {
   getType(): string {
     return "Trabalho em Grupo";
   }
+  requiresApproval(): boolean {
+    return false;
+  }
 }
 
 export class LaboratoryClassroom extends Classroom {
@@ -80,5 +91,8 @@ export class LaboratoryClassroom extends Classroom {
   }
   getType(): string {
     return "Laboratório";
+  }
+  requiresApproval(): boolean {
+    return true;
   }
 }

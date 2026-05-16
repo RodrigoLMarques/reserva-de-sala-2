@@ -89,6 +89,34 @@ export class ReservationServiceProxy implements ReservationService {
     return this.realService.updateReservation(reservationId, newStart, newEnd);
   }
 
+  approveReservation(reservationId: string): boolean {
+    if (!this.hasActiveUser()) {
+      console.log("Selecione um usuário antes de aprovar reservas.");
+      return false;
+    }
+
+    if (!this.isTeacher()) {
+      console.log("Apenas professores podem aprovar reservas.");
+      return false;
+    }
+
+    return this.realService.approveReservation(reservationId);
+  }
+
+  rejectReservation(reservationId: string): boolean {
+    if (!this.hasActiveUser()) {
+      console.log("Selecione um usuário antes de rejeitar reservas.");
+      return false;
+    }
+
+    if (!this.isTeacher()) {
+      console.log("Apenas professores podem rejeitar reservas.");
+      return false;
+    }
+
+    return this.realService.rejectReservation(reservationId);
+  }
+
   listAvailable(start: Date, end: Date): Classroom[] {
     return this.realService.listAvailable(start, end);
   }

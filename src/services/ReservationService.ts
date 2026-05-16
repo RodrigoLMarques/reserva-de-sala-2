@@ -16,6 +16,10 @@ export interface ReservationService {
 
   updateReservation(reservationId: string, newStart: Date, newEnd: Date): boolean;
 
+  approveReservation(reservationId: string): boolean;
+
+  rejectReservation(reservationId: string): boolean;
+
   listAvailable(start: Date, end: Date): Classroom[];
 
   listAllReservations(): ReservationEntry[];

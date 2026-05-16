@@ -130,7 +130,7 @@ export class ReservationCLI {
     }
     all.forEach(({ classroom, reservation }, i) =>
       console.log(
-        `  ${i + 1}. Sala ${classroom.getNumber()} — ${reservation.holder.name} — ${this.fmt(reservation.startDate)} até ${this.fmt(reservation.endDate)}`,
+        `  ${i + 1}. Sala ${classroom.getNumber()} — ${reservation.holder.name} — ${this.fmt(reservation.startDate)} até ${this.fmt(reservation.endDate)} [${reservation.getStatus()}]`,
       ),
     );
     const id = parseInt(await this.ask("Reserva: ")) - 1;
@@ -163,7 +163,7 @@ export class ReservationCLI {
     }
     all.forEach(({ classroom, reservation }, i) =>
       console.log(
-        `  ${i + 1}. Sala ${classroom.getNumber()} — ${reservation.holder.name} — ${this.fmt(reservation.startDate)} até ${this.fmt(reservation.endDate)}`,
+        `  ${i + 1}. Sala ${classroom.getNumber()} — ${reservation.holder.name} — ${this.fmt(reservation.startDate)} até ${this.fmt(reservation.endDate)} [${reservation.getStatus()}]`,
       ),
     );
     const id = parseInt(await this.ask("Reserva: ")) - 1;
@@ -192,6 +192,50 @@ export class ReservationCLI {
       return;
     }
     notifs.forEach((n) => console.log(`  ${n.message}`));
+  }
+
+  private async gerenciarPendentes() {
+    const pending = this.service
+      .listAllReservations()
+      .filter(({ reservation }) => reservation.getStatus() === "PENDENTE");
+
+    if (pending.length === 0) {
+      console.log("Nenhuma reserva pendente.");
+      return;
+    }
+
+    pending.forEach(({ classroom, reservation }, i) =>
+      console.log(
+        `  ${i + 1}. Sala ${classroom.getNumber()} (${classroom.getType()}) — ${reservation.holder.name} — ${this.fmt(reservation.startDate)} até ${this.fmt(reservation.endDate)}`,
+      ),
+    );
+
+    const id = parseInt(await this.ask("Reserva: ")) - 1;
+    if (isNaN(id) || id < 0 || id >= pending.length) {
+      console.log("Inválido.");
+      return;
+    }
+
+    const reservationId = pending[id].reservation.getId();
+    console.log("  1. Aprovar");
+    console.log("  2. Rejeitar");
+    const opt = (await this.ask("Ação: ")).trim();
+
+    if (opt === "1") {
+      console.log(
+        this.service.approveReservation(reservationId)
+          ? "Reserva aprovada."
+          : "Não foi possível aprovar.",
+      );
+    } else if (opt === "2") {
+      console.log(
+        this.service.rejectReservation(reservationId)
+          ? "Reserva rejeitada."
+          : "Não foi possível rejeitar.",
+      );
+    } else {
+      console.log("Inválido.");
+    }
   }
 
   private async relatorioDiario() {
@@ -235,6 +279,7 @@ export class ReservationCLI {
       console.log("5. Ver notificações");
       console.log("6. Relatório diário");
       console.log("7. Trocar política de reserva");
+      console.log("8. Gerenciar reservas pendentes");
       console.log("0. Sair");
 
       const opt = (await this.ask("\nOpção: ")).trim();
@@ -248,6 +293,7 @@ export class ReservationCLI {
       else if (opt === "5") await this.verNotificacoes();
       else if (opt === "6") await this.relatorioDiario();
       else if (opt === "7") await this.trocarPolitica();
+      else if (opt === "8") await this.gerenciarPendentes();
       else console.log("Opção inválida.");
     }
 
