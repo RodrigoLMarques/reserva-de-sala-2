@@ -8,10 +8,11 @@ import {
 } from "../models/ReservationPolitics";
 import { User } from "../models/User";
 import { ClassroomService } from "../services/ClassroomService";
+import { ReservationServiceProxy } from "../services/ReservationServiceProxy";
 import { ReportService } from "../services/ReportService";
 
 export class ReservationCLI {
-  private service = new ClassroomService();
+  private service = new ReservationServiceProxy(new ClassroomService());
   private reportService = new ReportService();
   private rl = readline.createInterface({
     input: process.stdin,
@@ -19,6 +20,7 @@ export class ReservationCLI {
   });
   private lineBuffer: string[] = [];
   private lineWaiters: ((line: string) => void)[] = [];
+  private currentUser: User | null = null;
 
   constructor(
     private rooms: Classroom[],
@@ -52,6 +54,22 @@ export class ReservationCLI {
     });
   }
 
+  private async selecionarUsuario() {
+    console.log("Escolha o usuário ativo:");
+    this.users.forEach((u, i) => console.log(`  ${i + 1}. ${u.name} (${u.role})`));
+
+    const id = parseInt(await this.ask("Usuário: ")) - 1;
+    if (isNaN(id) || id < 0 || id >= this.users.length) {
+      console.log("Inválido.");
+      return false;
+    }
+
+    this.currentUser = this.users[id];
+    this.service.setCurrentUser(this.currentUser);
+    console.log(`Usuário ativo: ${this.currentUser.name} (${this.currentUser.role})`);
+    return true;
+  }
+
   private async listarDisponiveis() {
     const start = this.parseDate(await this.ask("Início (YYYY-MM-DDTHH:mm): "));
     const end = this.parseDate(await this.ask("Fim (YYYY-MM-DDTHH:mm): "));
@@ -70,20 +88,16 @@ export class ReservationCLI {
   }
 
   private async criarReserva() {
+    if (!this.currentUser) {
+      console.log("Selecione um usuário antes de criar reservas.");
+      return;
+    }
+
     this.rooms.forEach((r, i) =>
       console.log(`  ${i + 1}. Sala ${r.getNumber()} — ${r.getType()}`),
     );
     const roomdId = parseInt(await this.ask("Sala: ")) - 1;
     if (isNaN(roomdId) || roomdId < 0 || roomdId >= this.rooms.length) {
-      console.log("Inválido.");
-      return;
-    }
-
-    this.users.forEach((u, i) =>
-      console.log(`  ${i + 1}. ${u.name} (${u.role})`),
-    );
-    const userdId = parseInt(await this.ask("Usuário: ")) - 1;
-    if (isNaN(userdId) || userdId < 0 || userdId >= this.users.length) {
       console.log("Inválido.");
       return;
     }
@@ -98,7 +112,7 @@ export class ReservationCLI {
     const reservation = new Reservation(
       start,
       end,
-      this.users[userdId],
+      this.currentUser,
       this.rooms[roomdId].getId(),
     );
     console.log(
@@ -206,7 +220,14 @@ export class ReservationCLI {
   async run() {
     console.log("Reserva de Salas");
 
+    const selected = await this.selecionarUsuario();
+    if (!selected) {
+      this.rl.close();
+      return;
+    }
+
     while (true) {
+      console.log(`\nUsuário ativo: ${this.currentUser?.name} (${this.currentUser?.role})`);
       console.log("\n1. Listar salas disponíveis");
       console.log("2. Criar reserva");
       console.log("3. Modificar reserva");

@@ -6,8 +6,9 @@ import {
   ReservationPolitics,
 } from "../models/ReservationPolitics";
 import { Reservation } from "../models/Reservation";
+import { ReservationEntry, ReservationService } from "./ReservationService";
 
-export class ClassroomService {
+export class ClassroomService implements ReservationService {
   private repository = ClassroomRepository.getInstance();
   private currentPolitic = new FirstReservationPolitics(randomUUID());
 
@@ -72,7 +73,7 @@ export class ClassroomService {
     return this.repository.listAvailable(start, end);
   }
 
-  listAllReservations(): { classroom: Classroom; reservation: Reservation }[] {
+  listAllReservations(): ReservationEntry[] {
     return this.repository.getAll().flatMap((classroom) =>
       classroom.getReservations().map((r) => ({ classroom, reservation: r })),
     );
